@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - simple text from json</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+		<style>
+			*{
+				box-sizing: border-box;
+			}
+			body {
+				background-color: #f0f0f0;
+				color: #444;
+			}
+			a {
+				color: #08f;
+			}
+			.container{
+				width: 100%;
+				height: 100vh;
+				background-color: black;
+				/*scroll-snap-type: y mandatory;*/
+				/*overflow-y: scroll;*/
+			}
+			.main{
+				width: 100%;
+				height: 100%;
+				height: 500px;
+				position: absolute;
+				/*background: url('images/son ar.gif');*/
+				/*background-repeat: no-repeat;*/
+				/*background-size: 100% auto;*/
+				/*border: 5px solid black;*/
+				/*overflow: hidden;*/
+				/*scroll-snap-align: start;*/
+			}
+			.particle{
+				width: 100%;
+				height: 100vh;
+				/*scroll-snap-align: start;*/
+			}
+			.vishal{
+				width: 100%;
+				height: 100vh;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 100px;
+				/*scroll-snap-align: start;*/
+			}
+			.vishal p{
+				text-align: justify;
+			}
+			.counter{
+				position: absolute;
+				bottom: 100px;
+				height: 100px;
+				width: 100%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				flex-direction: column;
+			}
+			.counter span{
+				color: white;
+				font-size: 100px;
+			}
+			.copyright{
+				width: 100%;
+				height: 30px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			@media only screen and (max-width: 600px) {
+				.counter span{
+					font-size: 40px;
+				}	
+			}
+		</style>
+	</head>
+	<body>
+		
+		<section class="container">
+			<section class="main" >
+			</section>
+			<section class="counter">
+				<span class="countValue"></span>
+			</section>
+			<section class="particle" id="particles-js"></section>
+			<section class="vishal">
+				<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+				tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+				quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+				consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+				cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+				proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+			</section>
+			<section class="copyright">
+				<span>&copy; 2019 <a href="https://www.vishalpandey.xyz/">Vishal Pandey</a></span>
+			</section>
+		</section>
+
+
+		<script src="node_modules/three/build/three.js"></script>
+		<script src="js/OrbitControls.js"></script>
+		<script src="js/SVGLoader.js"></script>
+		<script src="node_modules/particles.js/particles.js"></script>
+		<script>
+
+			particlesJS.load('particles-js', 'assets/particles.json', function() {
+			  console.log('callback - particles.js config loaded');
+			});
+
+			var camera, scene, renderer;
+
+			init();
+			animate();
+
+			var mySlider = document.querySelector('.main');
+
+			var text;
+
+			var message, shapes, geometry;
+
+			function init( ) {
+
+				var mySlider = document.querySelector('.main');
+
+				camera = new THREE.PerspectiveCamera( 45, mySlider.clientWidth / mySlider.clientHeight, 1, 10000 );
+				camera.position.set( 0,  400, 600 );
+
+				scene = new THREE.Scene();
+				// scene.background = new THREE.Color( 0xf0e1f0, 0 );
+				// scene.background = rgba(0, 0, 0, 0);
+
+				var loader = new THREE.FontLoader();
+				loader.load( 'fonts/gentilis_regular.typeface.json', function ( font ) {
+
+					var xMid;
+
+					var color = new THREE.Color( 0xfefefe );
+
+					var matDark = new THREE.MeshBasicMaterial( {
+						color: color,
+						side: THREE.DoubleSide
+					} );
+
+					var matLite = new THREE.MeshBasicMaterial( {
+						color: color,
+						transparent: true,
+						opacity: 0.4,
+						side: THREE.DoubleSide
+					} );
+
+					message = "SONAR";
+
+					shapes = font.generateShapes( message, 100 );
+
+					geometry = new THREE.ShapeBufferGeometry( shapes );
+
+					geometry.computeBoundingBox();
+
+					xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
+
+					geometry.translate( xMid, 0, 0 );
+
+					// make shape ( N.B. edge view not visible )
+
+					text = new THREE.Mesh( geometry, matLite );
+					// myText = text;
+					text.position.z = - 150;
+					scene.add( text );
+
+					// make line shape ( N.B. edge view remains visible )
+
+					var holeShapes = [];
+
+					for ( var i = 0; i < shapes.length; i ++ ) {
+
+						var shape = shapes[ i ];
+
+						if ( shape.holes && shape.holes.length > 0 ) {
+
+							for ( var j = 0; j < shape.holes.length; j ++ ) {
+
+								var hole = shape.holes[ j ];
+								holeShapes.push( hole );
+
+							}
+
+						}
+
+					}
+
+					shapes.push.apply( shapes, holeShapes );
+
+					var style = THREE.SVGLoader.getStrokeStyle( 5, color.getStyle() );
+
+					var strokeText = new THREE.Group();
+
+					for ( var i = 0; i < shapes.length; i ++ ) {
+
+						var shape = shapes[ i ];
+
+						var points = shape.getPoints();
+
+						var geometry = THREE.SVGLoader.pointsToStroke( points, style );
+
+						geometry.translate( xMid, 0, 0 );
+
+						var strokeMesh = new THREE.Mesh( geometry, matDark );
+						strokeText.add( strokeMesh );
+
+					}
+
+					scene.add( strokeText );
+
+				} ); //end load function
+
+				renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+				renderer.setClearColor( 0x000000, 0 ); // the default
+				renderer.setPixelRatio( window.devicePixelRatio );
+
+				// renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setSize( mySlider.clientWidth, mySlider.clientHeight );
+				// document.body.appendChild( renderer.domElement );
+				document.querySelector('.main').appendChild( renderer.domElement );
+
+				var controls = new THREE.OrbitControls( camera, renderer.domElement );
+				controls.target.set( 0, 0, 0 );
+				// controls.noPan = true;
+				// controls.noKeys = true;
+				// controls.noRotate = true;
+				controls.noZoom = true;
+				// controls.update();
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			} // end init
+
+			function onWindowResize() {
+
+				var mySlider = document.querySelector('.main');
+
+				camera.aspect = mySlider.clientWidth / mySlider.clientHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( mySlider.clientWidth, mySlider.clientHeight );
+
+			}
+
+			var counter = 0;
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+				// i = i+0.01;
+				// camera.position.set( i, - 400, 600 );
+				// scene.rotation.x += 0.01;
+				scene.rotation.y += 0.01;
+				scene.rotation.z += 0.01;
+				scene.rotation.x += 0.01;
+				// text.position.z = - 10;
+				// counter += 1;
+				// message = "Vishal";
+				// console.log(scene);
+
+				render();
+
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+
+			setInterval(()=>{
+				var d2 = new Date("2019-07-15T00:00:00");
+				var d1 = new Date()
+				var diff = d2-d1;
+				var seconds = parseInt((diff/1000)%60);
+				var minutes = parseInt(((diff/1000)/60)%60);
+				var hours = parseInt(((diff/1000)/60/60)%60%24);
+				var days = parseInt(((diff/1000)/60/60/24)%60);
+				days = days==0?"":days+"d:";
+
+
+				document.querySelector('.countValue').innerText = days+hours+"h:"+minutes+"m:"+seconds+"s";
+				counter += 1;
+				console.log("Vishal")
+			}, 1000)
+
+		</script>
+
+	</body>
+</html>
